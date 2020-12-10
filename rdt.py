@@ -6,6 +6,7 @@ import threading
 from multiprocessing import Queue
 import time
 import struct
+from segment import *
 
 udp_pkt_len: int = 500  # 单个udp包的长度
 
@@ -191,6 +192,10 @@ class RDTSocket(UnreliableSocket):
         super().close()
 
     def close_client(self) -> None:
+        close = segment(syn=0, fin=1, )
+        if pkt_que.empty():
+
+
         super().close()
 
     def close_server(self) -> None:
