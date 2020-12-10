@@ -1,30 +1,3 @@
-#!/usr/bin/env python3
-# coding=utf-8
-"""
-@Github: https://github.com/Certseeds
-@Organization: SUSTech
-@Author: nanoseeds
-@Date: 2020-07-12 17:46:45 
-@LastEditors  : nanoseeds
-"""
-""" CS305_2019F_Remake 
-    Copyright (C) 2020  nanoseeds
-
-    CS305_2019F_Remake is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
-
-    CS305_2019F_Remake is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""
-from config import *
-
 
 class rdt_header(object):
 
@@ -63,9 +36,3 @@ class rdt_header(object):
         return "bits:{} seq:{} ack:{} length:{}".format(str(self.bits), str(self.seq_num), str(self.ack_num),
                                                         str(self.length))
 
-
-if __name__ == '__main__':
-    head = rdt_header(7, 0, 0, '12345')
-    assert head.equal(bits=7, seq_num=0, ack_num=0, length=5)
-    head2 = rdt_header.unpack(b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\x00\x00\x00\x05')
-    assert head2.equal(bits=1, seq_num=2, ack_num=3, length=4)

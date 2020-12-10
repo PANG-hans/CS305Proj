@@ -53,7 +53,7 @@ class UnreliableSocket:
     def getsockname(self):
         return sockets[id(self)].getsockname()
 
-    def close(self):
+    def close(self) -> object:
         sockets[id(self)].close()
 
 

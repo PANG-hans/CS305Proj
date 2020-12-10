@@ -34,10 +34,10 @@ from lab07.src.udp_socket import UDPsocket
 
 data_length: int = 520
 
-SYN_bit: int = (1 << 0)
-FIN_bit: int = (1 << 1)
-ACK_bit: int = (1 << 2)
-Reset_bit: int = (1 << 3)
+SYN_bit: int = (1 << 0) # 1
+FIN_bit: int = (1 << 1) # 10
+ACK_bit: int = (1 << 2) # 100
+Reset_bit: int = (1 << 3) # 1000
 udp_packet_length: int = 500
 begin_bytes: bytes = b'0' * 20
 
