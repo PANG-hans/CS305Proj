@@ -26,8 +26,8 @@
 """
 import sys
 
-from lab07.src.config import *
-from lab07.src.rdt_socket import rdt_socket
+from sample.src.config import *
+from sample.src.rdt_socket import rdt_socket
 
 BUFFer_size: int = 4096
 client = rdt_socket()

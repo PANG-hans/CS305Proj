@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+sample#!/usr/bin/env python3
 # coding=utf-8
 """
 @Github: https://github.com/Certseeds/CS305_2019F_Remake
@@ -25,8 +25,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from lab07.src.config import *
-from lab07.src.rdt_socket import rdt_socket
+from sample.src.config import *
+from sample.src.rdt_socket import rdt_socket
 
 server = rdt_socket()
 

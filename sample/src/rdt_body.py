@@ -23,7 +23,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-from lab07.src.config import *
+from sample.src.config import *
 
 
 class rdt_body(object):

@@ -27,10 +27,10 @@ LastEditTime: 2020-08-08 22:54:28
 import time
 from typing import List
 
-from lab07.src.config import *
-from lab07.src.rdt_body import rdt_body
-from lab07.src.rdt_header import rdt_header
-from lab07.src.udp_socket import UDPsocket
+from sample.src.config import *
+from sample.src.rdt_body import rdt_body
+from sample.src.rdt_header import rdt_header
+from sample.src.udp_socket import UDPsocket
 
 data_length: int = 520
 
