@@ -6,6 +6,7 @@ import threading
 import time
 import struct
 import queue
+from Segment import *
 
 udp_pkt_len: int = 500  # 单个udp包的长度
 
