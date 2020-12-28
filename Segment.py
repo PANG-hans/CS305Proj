@@ -3,7 +3,8 @@ from utils import *
 
 HEADER_LEN = 14
 
-class segment:
+
+class Segment:
     """
     [0] Flag(1 Byte): ACK, SYN, FIN, END
     [1:5] SEQ (4 Bytes): Sequence num of the data
