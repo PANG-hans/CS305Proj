@@ -1,11 +1,17 @@
+import logging
 import traceback
 from typing import Tuple
 
+import utils_example
 from USocket import UnreliableSocket
 import threading
 import time
 import struct
+from header import *
 
+
+
+DATA_LENGTH = 2048
 
 class RDTSocket(UnreliableSocket):
     """
@@ -29,6 +35,7 @@ class RDTSocket(UnreliableSocket):
         self._send_to = None
         self._recv_from = None
         self.debug = debug
+        self.target = ''
         #############################################################################
         # TODO: ADD YOUR NECESSARY ATTRIBUTES HERE
         #############################################################################
@@ -37,7 +44,7 @@ class RDTSocket(UnreliableSocket):
         #                             END OF YOUR CODE                              #
         #############################################################################
 
-    def accept(self) -> (RDTSocket, (str, int)):
+    def accept(self) -> ('RDTSocket', (str, int)):
         """
         Accept a connection. The socket must be bound to an address and listening for 
         connections. The return value is a pair (conn, address) where conn is a new 
@@ -47,6 +54,44 @@ class RDTSocket(UnreliableSocket):
         This function should be blocking. 
         """
         conn, addr = RDTSocket(self._rate), None
+        self.target = addr
+        self.set_send_to(self.sendto)
+        self.set_recv_from(self.recvfrom)
+
+        while True:
+
+            self.setblocking(True)
+            recv, addr = self.recvfrom(DATA_LENGTH)
+            self.setblocking(False)
+            packet1 = utils_example.get_handshake_1_packet()
+            packet2 = utils_example.get_handshake_2_packet()
+            packet3 = utils_example.get_handshake_3_packet()
+            self.settimeout(2)
+            try:
+                if packet1 != recv:
+                    # consider checksum?
+                    continue
+                while True:
+                    try:
+                        conn.sendto(packet2, addr)
+                        recv, addr = self.recvfrom(DATA_LENGTH)
+                    #     change to conn.recv(target)
+                    except Exception as e:
+                        logging.debug(e)
+                        print(e)
+                        continue
+                    if packet3 != recv:
+                        continue
+                    #     resend p2
+                    else:
+                        break
+
+            except Exception as e:
+                logging.debug(e)
+                print(e)
+                continue
+
+
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
@@ -61,6 +106,29 @@ class RDTSocket(UnreliableSocket):
         Connect to a remote socket at address.
         Corresponds to the process of establishing a connection on the client side.
         """
+        packet1 = utils_example.get_handshake_1_packet()
+        packet2 = utils_example.get_handshake_2_packet()
+        packet3 = utils_example.get_handshake_3_packet()
+        self.settimeout(2)
+        self.target = address
+        self.set_send_to(self.sendto)
+        self.set_recv_from(self.recvfrom)
+
+        self.sendto(packet1, address)
+        while True:
+            try:
+                recv, addr = self.recvfrom(DATA_LENGTH)
+                if packet2 != recv:
+                    continue
+            #         resend p1
+                self.sendto(packet3, address)
+                break
+
+            except Exception as e:
+                logging.debug(e)
+                print(e)
+
+
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
