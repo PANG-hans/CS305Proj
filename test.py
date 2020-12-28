@@ -1,2 +1,5 @@
-a:bytes  = b'123456'
-print(a[2:4])
+x = 1
+assert x == 1
+print("TRUE")
+assert x == 2
+print("@")
