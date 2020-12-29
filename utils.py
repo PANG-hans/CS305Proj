@@ -5,7 +5,7 @@ def int_to_bytes(i: int, b_len: int) -> bytes:
     :param b_len: The length of bytes converted into.
     :return: The bytes.
     """
-    return i.to_bytes(length=b_len, byteorder='big', signed=False)
+    return int.to_bytes(i, length=b_len, byteorder='big', signed=False)
 
 
 def bytes_to_int(b: bytes) -> int:

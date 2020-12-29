@@ -6,11 +6,11 @@ HEADER_LEN = 14
 class Segment:
     """
     [0] Flag(1 Byte): ACK, SYN, FIN, END
-    [1:5] SEQ (4 Bytes): Sequence num of the data
-    [5:9] SEQACK (4 Bytes): Next sequence num of the data should be
-    [9:11] LEN (2 Bytes): The length of data in bytes, at most 2^32-1 bytes
-    [12:14] CHECKSUM (2 Bytes): The checksum of the data
-    [15:] PAYLOAD
+    [1:5) SEQ (4 Bytes): Sequence num of the data
+    [5:9) SEQACK (4 Bytes): Next sequence num of the data should be
+    [9:11) LEN (2 Bytes): The length of data in bytes, at most 2^32-1 bytes
+    [11:13) CHECKSUM (2 Bytes): The checksum of the data
+    [13:] PAYLOAD
     """
 
     def __init__(self,
@@ -43,11 +43,10 @@ class Segment:
 
             self.flags = content[:1]
             flags_num = bytes_to_int(self.flags)
-            binary = bin(flags_num)
-            self.syn = binary[-4]
-            self.fin = binary[-3]
-            self.ack = binary[-2]
-            self.end = binary[-1]
+            self.syn = int(flags_num & 0x08 == 0x08)
+            self.fin = int(flags_num & 0x04 == 0x04)
+            self.ack = int(flags_num & 0x02 == 0x02)
+            self.end = int(flags_num & 0x01 == 0x01)
 
             self.seq = content[1:5]
             self.seq_ack = content[5:9]
@@ -55,8 +54,8 @@ class Segment:
             self.body_length = content[9:11]
             self.part = content[:11]
 
-            self.checksum = content[12:14]
-            self.payload = content[15:]
+            self.checksum = content[11:13]
+            self.payload = content[13:]
             self.content = content
             self.check()
 
