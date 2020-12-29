@@ -46,13 +46,14 @@ class RDTSocket(UnreliableSocket):
         self.timers = Queue()  # 已发出还未确认结果的计时器
 
         self.win_size = 5  # 窗口大小
-        self.win_idx = 0  # 窗口首位下标
+        self.win_base = 0  # 窗口首位下标
+        self.win_next = 0  # 下一个需要检查的窗口
 
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
 
-    def accept(self) -> (RDTSocket, (str, int)):
+    def accept(self) -> ("RDTSocket", (str, int)):
         """
         Accept a connection. The socket must be bound to an address and listening for
         connections. The return value is a pair (conn, address) where conn is a new
@@ -61,10 +62,14 @@ class RDTSocket(UnreliableSocket):
 
         This function should be blocking.
         """
-        conn, addr = RDTSocket(self._rate), None
+        # conn, addr = RDTSocket(self._rate), None
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
+        self.conn = None
+        while not self.conn:
+            time.sleep(0.1)
+        self.debug_print(["Client address: ", self.conn.dst_addr])
 
         #############################################################################
         #                             END OF YOUR CODE                              #
@@ -79,8 +84,21 @@ class RDTSocket(UnreliableSocket):
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
-        raise NotImplementedError()
-        #############################################################################
+        self.seq = 12345
+        datagram = Segment(syn=1, seq=self.seq)
+
+        # 尝试连接，10次失败后退出
+        connect_cnt = 1
+        while not self.dst_addr:
+            self.sendto(datagram.to_bytes(), address)
+            self.debug_print(["Try to connect to ", address])
+            connect_cnt += 1
+            if connect_cnt > 10:
+                self.debug_print(["Fail to connect to server!"])
+                return
+            time.sleep(0.5 * connect_cnt)
+
+    #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
 
