@@ -15,7 +15,7 @@ from Segment import *
 
 
 
-DATA_LENGTH = 2048
+DATA_LENGTH = 1024
 
 class RDTSocket(UnreliableSocket):
     """
@@ -44,6 +44,8 @@ class RDTSocket(UnreliableSocket):
 
         self.seq = 0
         self.seq_ack = 0
+
+        self.established = False
         #############################################################################
         # TODO: ADD YOUR NECESSARY ATTRIBUTES HERE
         #############################################################################
@@ -62,37 +64,54 @@ class RDTSocket(UnreliableSocket):
         This function should be blocking. 
         """
         conn, addr = RDTSocket(self._rate), None
-        self.target = addr
-        self.set_send_to(self.sendto)
-        self.set_recv_from(self.recvfrom)
-
+        conn.bind(('127.0.0.1', 9999))
+        print("Accept: Create a new Socket.")
         while True:
 
             # self.setblocking(True)
-            recv, addr = self.recvfrom(DATA_LENGTH)
+            print("Accept: Try to receive packet1.")
+            recv, addr = conn.recvfrom(DATA_LENGTH)
+            print("Accept: Receive one packet.")
             # self.setblocking(False)
             packet1 = Segment(content=recv)
-            self.settimeout(2)
+            self.settimeout(10)
             try:
                 if packet1.ack != 1 or \
                         packet1.syn != 1:
+                    print("Accept: Receive packet1 with error!")
+                    time.sleep(0.00001)
                     continue
-                while True:
-                    try:
-                        self.seq = random.randint(0, 1234567)
-                        packet2 = Segment(syn=1, seq=self.seq, seq_ack=packet1.getSeq()+1)
-                        conn.sendto(packet2.getContent(), addr)
-                        recv, addr = self.recvfrom(DATA_LENGTH)
-                    #     change to conn.recv(target)
-                    except Exception as e:
-                        logging.debug(e)
-                        print(e)
-                        continue
-                    if packet3 != recv:
-                        continue
-                    #     resend p2
-                    else:
-                        break
+                # while True:
+                try:
+                    print("Accept: Receive packet1 correctly.")
+                    conn.seq = random.randint(0, 1234567)
+                    conn.seq_ack = packet1.getSeq()+1
+                    packet2 = Segment(syn=1, seq=conn.seq, seq_ack=conn.seq_ack)
+                    conn.sendto(data=packet2.getContent(), addr=addr)
+                    print("Accept: Send packet2 for handshaking.")
+
+                    # 第三个包错了不会告诉client， 不会建立链接
+                    while True:
+                        try:
+                            recv, addr = conn.recvfrom(DATA_LENGTH)
+                            packet3 = Segment(content=recv)
+                            if packet3.ack != 1 or packet3.getSeqAck() != conn.seq+1:
+                                print("Accept: Receive packet3 with error!")
+                                time.sleep(0.00001)
+                                continue
+                            print("Accept: Receive packet3 correctly.")
+                            conn.established = True
+                            print("Accept: Establish a connection correctly.")
+                            break
+                        except Exception as e:
+                            logging.debug(e)
+                            print(e)
+                            continue
+
+                except Exception as e:
+                    logging.debug(e)
+                    print(e)
+                    continue
 
             except Exception as e:
                 logging.debug(e)
@@ -117,27 +136,34 @@ class RDTSocket(UnreliableSocket):
 
         self.seq = random.randint(0, 1234567)
         packet1 = Segment(syn=1, seq=self.seq)
+        print("Connect: Create packet1.")
 
-        self.settimeout(2)
-        self.target = address
-        self.set_send_to(self.sendto)
-        self.set_recv_from(self.recvfrom)
+        self.settimeout(10)
 
-        self.sendto(packet1.getContent(), address)
+        self.sendto(data=packet1.getContent(), addr=address)
+        print("Connect: Send packet1 for handshaking.")
+        # return None
+        time.sleep(1)
         while True:
             try:
+                time.sleep(1)
                 recv, addr = self.recvfrom(DATA_LENGTH)
                 packet2 = Segment(content=recv)
                 if packet2.getSeqAck() == self.seq+1 \
                         and packet2.ack == 1\
                         and packet2.syn == 1:
+                    print("Connect: Receive packet2 correctly.")
                     self.seq = packet2.getSeqAck()
-                    packet3 = Segment(seq=self.seq, ack=packet2.getSeq()+1)
-                    self.sendto(packet3.getContent(), address)
+                    self.seq_ack = packet2.getSeq()+1
+                    packet3 = Segment(seq=self.seq, seq_ack=self.seq_ack)
+                    self.sendto(data=packet3.getContent(), addr=address)
+                    self.established = True
                     break
+                print("Connect: Receive packet2 with error!")
+                time.sleep(1)
 
             except Exception as e:
-                self.sendto(packet1.getContent(), address)
+                self.sendto(data=packet1.getContent(), addr=address)
                 logging.debug(e)
                 print(e)
 
@@ -145,7 +171,6 @@ class RDTSocket(UnreliableSocket):
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
-        raise NotImplementedError()
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
