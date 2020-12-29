@@ -46,7 +46,7 @@ class RDTSocket(UnreliableSocket):
         self.timers = Queue()  # 已发出还未确认结果的计时器
 
         self.win_size = 5  # 窗口大小
-        self.win_idx = 0  # 窗口首位
+        self.win_idx = 0  # 窗口首位下标
 
         #############################################################################
         #                             END OF YOUR CODE                              #
