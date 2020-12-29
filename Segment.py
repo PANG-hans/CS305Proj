@@ -94,10 +94,10 @@ class Segment:
 
     def check(self) -> bool:
         check_ = False
-        self.ack = 0
+        # self.ack = 0
         if judge_checksum(self.content):
             check_ = True
-            self.ack = 1
+            # self.ack = 1
         return check_
 
 
