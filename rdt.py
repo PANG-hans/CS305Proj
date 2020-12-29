@@ -1,15 +1,22 @@
 import traceback
+from enum import Enum
 from typing import Tuple
 
 from USocket import UnreliableSocket
-import threading
+from threading import *
 from multiprocessing import Queue
 import time
 import struct
-from segment import *
+from Segment import *
 
 udp_pkt_len: int = 500  # 单个udp包的长度
-
+class Status(Enum):
+    Closed = 0
+    Active = 1
+    Active_fin1 = 2
+    Active_fin2 = 3
+    Passive_fin1 = 4
+    Passive_fin2 = 5
 
 class RDTSocket(UnreliableSocket):
     """
@@ -40,6 +47,8 @@ class RDTSocket(UnreliableSocket):
         self.seqack = 0
         self.pkt_que = Queue()
         self.seq_que = Queue()
+        self.status = Status.Closed
+        self.process_thread = Thread(target=self.process_threading)
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
@@ -98,7 +107,7 @@ class RDTSocket(UnreliableSocket):
         data = None
         assert self._recv_from, "Connection not established yet. Use recvfrom instead."
         #############################################################################
-        # TODO: YOUR CODE HERE                                                      #
+        # TODO: YOUR CODE HERE
         #############################################################################
 
         #############################################################################
@@ -179,27 +188,63 @@ class RDTSocket(UnreliableSocket):
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
-        if self.client:
-            try:
-                self.close_client()
-            except ConnectionResetError:
-                return
-        else:
-            self.close_server()
+
+        while self.status != Status.Closed:
+            if self.status == Status.Active:
+                self.status = Status.Active_fin1
+            elif self.status == Status.Passive_fin1:
+                self.status = Status.Passive_fin2
+            while not True:
+                time.sleep(1)
+            #check and process send queue
+            finpkt = Segment()
+            if self.pkt_que.empty():
+                finpkt = Segment(fin=1, seq=self.seq + 1, seq_ack=self.seqack)
+            else:
+                temp = Segment(self.pkt_que.get())
+                finpkt = Segment(fin=1, seq=temp.getSeq() + 1, seq_ack=temp.getSeqAck()+1)
+
+            if finpkt.fin == 1:
+                self._send(finpkt)
+
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
+    def _close(self):
+        print("Closed socket to: ", self._send_to)
+        while not self.empty():
+            time.sleep(1)
+        self.status = Status.Closed
+
         super().close()
 
-    def close_client(self) -> None:
-        close = segment(syn=0, fin=1, )
-        if pkt_que.empty():
+    def process_threading(self):
+        while True:
+            while self.status != Status.Closed and self.recv_queue.empty():
+                time.sleep(0.0001)
+            if self.status == Status.Closed:
+                break
+            msg = self.recv_queue.get()
+            recv_dataHead = Segment(msg)
+            if self.client:
+                if recv_dataHead.fin == 1:
+                    if recv_dataHead.ack == 1:
+                        if self.status == Status.Active_fin1:
+                            self.status = Status.Active_fin2
+                        elif self.status == Status.Passive_fin2:
+                            self.status = Status.Closed
+                            self._close()
+                    else:
+                        self.recv_data_buffer.append(b'')
+                        self._send(Segment(fin=1, ack=1))
+                        if self.status in (Status.Active_fin1, Status.Active_fin2):
+                            self._close()
+                        elif self.status == Status.Active:
+                            self.status = Status.Passive_fin1
 
+    def _send(self, Segment):
+        self.seq_que.put(Segment)
 
-        super().close()
-
-    def close_server(self) -> None:
-        super().close()
 
     def set_send_to(self, send_to):
         self._send_to = send_to
