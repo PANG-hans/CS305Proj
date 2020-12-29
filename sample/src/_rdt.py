@@ -5,7 +5,7 @@ import time
 from threading import Timer
 from typing import List, Set, Tuple
 
-from lab07.src.udp_socket import UDPsocket
+from sample.src.udp_socket import UDPsocket
 
 header_length: int = 20
 data_length: int = 520

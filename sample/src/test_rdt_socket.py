@@ -28,7 +28,7 @@ import random
 import string
 import unittest
 
-from lab07.src.rdt_socket import *
+from sample.src.rdt_socket import *
 
 
 def random_str(num: int = 10) -> str:
