@@ -25,17 +25,6 @@ class Segment:
                  payload: bytes = b'',
                  content: bytes = None,
                  ):
-        """
-        initial segment
-        :param syn:
-        :param fin:
-        :param ack:
-        :param end:
-        :param seq:
-        :param seq_ack:
-        :param payload: The body of the segment
-        :param content: The whole packet of the segment
-        """
         # 先判断是否为解包操作
         if content:
             # 解包
