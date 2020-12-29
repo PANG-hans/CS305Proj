@@ -1,13 +1,20 @@
+import logging
+import random
 import traceback
 from enum import Enum
 from typing import Tuple
 
+import utils_example
 from USocket import UnreliableSocket
 from threading import *
 from multiprocessing import Queue
 import time
 import struct
 import queue
+from Segment import *
+from header import *
+
+from utils import *
 from Segment import *
 
 udp_pkt_len: int = 500  # 单个udp包的长度
@@ -20,6 +27,9 @@ class Status(Enum):
     Active_fin2 = 3
     Passive_fin1 = 4
     Passive_fin2 = 5
+
+
+DATA_LENGTH = 2048
 
 class RDTSocket(UnreliableSocket):
     """
@@ -43,6 +53,11 @@ class RDTSocket(UnreliableSocket):
         self._send_to = None
         self._recv_from = None
         self.debug = debug
+        self.target = ''
+
+
+        self.seq = 0
+        self.seq_ack = 0
         #############################################################################
         # TODO: ADD YOUR NECESSARY ATTRIBUTES HERE
         #############################################################################
@@ -66,6 +81,44 @@ class RDTSocket(UnreliableSocket):
         This function should be blocking. 
         """
         conn, addr = RDTSocket(self._rate), None
+        self.target = addr
+        self.set_send_to(self.sendto)
+        self.set_recv_from(self.recvfrom)
+
+        while True:
+
+            # self.setblocking(True)
+            recv, addr = self.recvfrom(DATA_LENGTH)
+            # self.setblocking(False)
+            packet1 = Segment(content=recv)
+            self.settimeout(2)
+            try:
+                if packet1.ack != 1 or \
+                        packet1.syn != 1:
+                    continue
+                while True:
+                    try:
+                        self.seq = random.randint(0, 1234567)
+                        packet2 = Segment(syn=1, seq=self.seq, seq_ack=packet1.getSeq()+1)
+                        conn.sendto(packet2.getContent(), addr)
+                        recv, addr = self.recvfrom(DATA_LENGTH)
+                    #     change to conn.recv(target)
+                    except Exception as e:
+                        logging.debug(e)
+                        print(e)
+                        continue
+                    if packet3 != recv:
+                        continue
+                    #     resend p2
+                    else:
+                        break
+
+            except Exception as e:
+                logging.debug(e)
+                print(e)
+                continue
+
+
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################
@@ -80,6 +133,34 @@ class RDTSocket(UnreliableSocket):
         Connect to a remote socket at address.
         Corresponds to the process of establishing a connection on the client side.
         """
+
+        self.seq = random.randint(0, 1234567)
+        packet1 = Segment(syn=1, seq=self.seq)
+
+        self.settimeout(2)
+        self.target = address
+        self.set_send_to(self.sendto)
+        self.set_recv_from(self.recvfrom)
+
+        self.sendto(packet1.getContent(), address)
+        while True:
+            try:
+                recv, addr = self.recvfrom(DATA_LENGTH)
+                packet2 = Segment(content=recv)
+                if packet2.getSeqAck() == self.seq+1 \
+                        and packet2.ack == 1\
+                        and packet2.syn == 1:
+                    self.seq = packet2.getSeqAck()
+                    packet3 = Segment(seq=self.seq, ack=packet2.getSeq()+1)
+                    self.sendto(packet3.getContent(), address)
+                    break
+
+            except Exception as e:
+                self.sendto(packet1.getContent(), address)
+                logging.debug(e)
+                print(e)
+
+
         #############################################################################
         # TODO: YOUR CODE HERE                                                      #
         #############################################################################

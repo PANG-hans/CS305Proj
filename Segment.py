@@ -38,6 +38,9 @@ class Segment:
         # 先判断是否为解包操作
         if content:
             # 解包
+            # if not judge_checksum(content):
+            #     raise Exception('Wrong checksum')
+
             self.flags = content[:1]
             flags_num = bytes_to_int(self.flags)
             binary = bin(flags_num)
@@ -50,10 +53,12 @@ class Segment:
             self.seq_ack = content[5:9]
 
             self.body_length = content[9:11]
+            self.part = content[:11]
+
             self.checksum = content[12:14]
             self.payload = content[15:]
             self.content = content
-
+            self.check()
 
         # 正常的封包进行的操作
         else:
@@ -71,10 +76,9 @@ class Segment:
             self.payload = payload
             self.body_length = int_to_bytes(len(payload), 2)
 
-            part = self.flags + self.seq + self.seq_ack + self.body_length
-            self.checksum = cal_checksum(part)
-            self.content = part + self.checksum + self.payload
-
+            self.part = self.flags + self.seq + self.seq_ack + self.body_length
+            self.checksum = cal_checksum(self.part, self.payload)
+            self.content = self.part + self.checksum + self.payload
 
     def getSeqAck(self) -> int:
         return bytes_to_int(self.seq_ack)
@@ -90,8 +94,10 @@ class Segment:
 
     def check(self) -> bool:
         check_ = False
-        if self.checksum == cal_checksum(self.content[:11]):
+        self.ack = 0
+        if judge_checksum(self.content):
             check_ = True
+            self.ack = 1
         return check_
 
 
