@@ -1,4 +1,5 @@
 import logging
+import random
 import traceback
 from typing import Tuple
 
@@ -8,6 +9,9 @@ import threading
 import time
 import struct
 from header import *
+
+from utils import *
+from Segment import *
 
 
 
@@ -36,6 +40,10 @@ class RDTSocket(UnreliableSocket):
         self._recv_from = None
         self.debug = debug
         self.target = ''
+
+
+        self.seq = 0
+        self.seq_ack = 0
         #############################################################################
         # TODO: ADD YOUR NECESSARY ATTRIBUTES HERE
         #############################################################################
@@ -60,20 +68,20 @@ class RDTSocket(UnreliableSocket):
 
         while True:
 
-            self.setblocking(True)
+            # self.setblocking(True)
             recv, addr = self.recvfrom(DATA_LENGTH)
-            self.setblocking(False)
-            packet1 = utils_example.get_handshake_1_packet()
-            packet2 = utils_example.get_handshake_2_packet()
-            packet3 = utils_example.get_handshake_3_packet()
+            # self.setblocking(False)
+            packet1 = Segment(content=recv)
             self.settimeout(2)
             try:
-                if packet1 != recv:
-                    # consider checksum?
+                if packet1.ack != 1 or \
+                        packet1.syn != 1:
                     continue
                 while True:
                     try:
-                        conn.sendto(packet2, addr)
+                        self.seq = random.randint(0, 1234567)
+                        packet2 = Segment(syn=1, seq=self.seq, seq_ack=packet1.getSeq()+1)
+                        conn.sendto(packet2.getContent(), addr)
                         recv, addr = self.recvfrom(DATA_LENGTH)
                     #     change to conn.recv(target)
                     except Exception as e:
@@ -106,25 +114,30 @@ class RDTSocket(UnreliableSocket):
         Connect to a remote socket at address.
         Corresponds to the process of establishing a connection on the client side.
         """
-        packet1 = utils_example.get_handshake_1_packet()
-        packet2 = utils_example.get_handshake_2_packet()
-        packet3 = utils_example.get_handshake_3_packet()
+
+        self.seq = random.randint(0, 1234567)
+        packet1 = Segment(syn=1, seq=self.seq)
+
         self.settimeout(2)
         self.target = address
         self.set_send_to(self.sendto)
         self.set_recv_from(self.recvfrom)
 
-        self.sendto(packet1, address)
+        self.sendto(packet1.getContent(), address)
         while True:
             try:
                 recv, addr = self.recvfrom(DATA_LENGTH)
-                if packet2 != recv:
-                    continue
-            #         resend p1
-                self.sendto(packet3, address)
-                break
+                packet2 = Segment(content=recv)
+                if packet2.getSeqAck() == self.seq+1 \
+                        and packet2.ack == 1\
+                        and packet2.syn == 1:
+                    self.seq = packet2.getSeqAck()
+                    packet3 = Segment(seq=self.seq, ack=packet2.getSeq()+1)
+                    self.sendto(packet3.getContent(), address)
+                    break
 
             except Exception as e:
+                self.sendto(packet1.getContent(), address)
                 logging.debug(e)
                 print(e)
 
